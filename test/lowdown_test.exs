@@ -9,8 +9,13 @@ defmodule LowdownTest do
     <<28, 13>> # SB <> HL7 data <> EB <> CR
 
   setup do
-    sock = Socket.TCP.connect! "localhost", 6660
+    ref = make_ref
+    :ranch.start_listener(ref, 1, :ranch_tcp, [port: 0], Lowdown.Protocols.MLLP, [])
+    port = :ranch.get_port(ref)
+
+    sock = Socket.TCP.connect! "localhost", port
     Socket.packet!(sock, :raw)
+
     {:ok, %{socket: sock}}
   end
 
