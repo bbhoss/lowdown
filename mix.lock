@@ -1,0 +1,3 @@
+%{"ex_hl7": {:hex, :ex_hl7, "0.1.3"},
+  "ranch": {:hex, :ranch, "1.2.1"},
+  "socket": {:hex, :socket, "0.3.1"}}
