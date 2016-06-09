@@ -1,6 +1,5 @@
 defmodule Lowdown.Protocols.MLLP do
   @behaviour :ranch_protocol
-  alias Lowdown.HL7Processor
 
   def start_link(ref, socket, transport, opts) do
     pid = spawn_link(__MODULE__, :init, [ref, socket, transport, opts])
@@ -9,7 +8,7 @@ defmodule Lowdown.Protocols.MLLP do
 
   def init(ref, socket, transport, opts) do
     :ok = :ranch.accept_ack(ref)
-    hl7_processor = Dict.get(opts, :hl7_processor)
+    hl7_processor = Keyword.get(opts, :processor)
     loop(socket, transport, hl7_processor)
   end
 
@@ -20,7 +19,7 @@ defmodule Lowdown.Protocols.MLLP do
 
         case data do
           <<hl7 :: binary-size(expected_payload_size), 28, 13>> ->
-            {:ok, ack} = process_hl7(hl7, hl7_processor)
+            {:ok, ack} = hl7_processor.process(hl7)
             send_ack(transport, socket, ack)
             loop(socket, transport, hl7_processor)
           _ ->
@@ -36,8 +35,4 @@ defmodule Lowdown.Protocols.MLLP do
     mllp_ack = <<11>> <> bin_ack <> <<28, 13>>
     transport.send(socket, mllp_ack)
   end
-
-  # handle default case where no hl7 processor is set
-  defp process_hl7(hl7, nil), do: HL7Processor.process(hl7) #TODO: Probably put in app config
-  defp process_hl7(hl7, processor) when is_function(processor), do: processor.(hl7)
 end
